@@ -1,0 +1,1 @@
+// nintendo.ts placeholder

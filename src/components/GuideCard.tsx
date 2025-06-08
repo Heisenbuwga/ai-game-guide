@@ -1,0 +1,1 @@
+// GuideCard.tsx placeholder
