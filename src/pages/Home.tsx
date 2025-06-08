@@ -1,35 +1,82 @@
-// Home.tsx placeholder
-import React, { useState } from 'react';
-import { generateGuide } from '../api/gemini';
-import { ThemeSwitcher } from '../components/ThemeSwitcher';
-import GuideCard from '../components/GuideCard';
-import { useTheme } from '../App';
+import React, { useEffect, useState } from 'react'
+import Header from '@/components/Header'
+import GuideCard from '@/components/GuideCard'
+import { themes, ThemeName } from '@/themes'
 
-export default function Home() {
-  const { theme } = useTheme();
-  const [game, setGame] = useState('魔物獵人');
-  const [input, setInput] = useState('');
-  const [result, setResult] = useState<{text:string,images?: string[]} | null>(null);
+const LOCAL_STORAGE_KEY = 'game-guide-theme'
+const LOCAL_STORAGE_DARK = 'game-guide-darkmode'
 
-  const onRun = async () => {
-    const res = await generateGuide(game, input);
-    setResult(res);
-  };
+const Home: React.FC = () => {
+  // 讀取 localStorage 主題，預設 'fantasy'
+  const [themeName, setThemeName] = useState<ThemeName>(() => {
+    return (localStorage.getItem(LOCAL_STORAGE_KEY) as ThemeName) || 'fantasy'
+  })
+
+  // 讀取 dark mode，預設 false
+  const [darkMode, setDarkMode] = useState(() => {
+    const stored = localStorage.getItem(LOCAL_STORAGE_DARK)
+    return stored === 'true' ? true : false
+  })
+
+  const theme = themes[themeName]
+
+  // 同步主題與 dark mode 狀態到 localStorage
+  useEffect(() => {
+    localStorage.setItem(LOCAL_STORAGE_KEY, themeName)
+  }, [themeName])
+
+  useEffect(() => {
+    localStorage.setItem(LOCAL_STORAGE_DARK, darkMode.toString())
+  }, [darkMode])
+
+  // 假攻略資料
+  const guides = [
+    {
+      title: '薩爾達傳說：神廟解謎',
+      content: '點燃兩個火把，石門會自動開啟。',
+      image: 'https://example.com/zelda.jpg',
+    },
+    {
+      title: '艾爾登法環：打敗Boss技巧',
+      content: '保持距離、翻滾反擊是關鍵。',
+    },
+  ]
+
+  // 切換暗黑模式
+  const toggleDarkMode = () => setDarkMode((prev) => !prev)
+
+  // 切換主題
+  const handleThemeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setThemeName(e.target.value as ThemeName)
+  }
 
   return (
-    <div className={`min-h-screen bg-cover theme-${theme}`}>
-      <header className="p-4 flex justify-between">
-        <h1 className="text-2xl font-bold">AI 遊戲攻略整理器</h1>
-        <ThemeSwitcher />
-      </header>
-      <main className="p-4 max-w-2xl mx-auto">
-        <select className="border p-2 rounded" value={game} onChange={e=>setGame(e.target.value)}>
-          <option>魔物獵人</option><option>薩爾達傳說</option><option>原神</option><option>其他</option>
-        </select>
-        <textarea className="w-full h-32 border p-2 rounded mt-2" value={input} onChange={e=>setInput(e.target.value)} placeholder="輸入任務內容" />
-        <button className="mt-2 px-4 py-2 bg-green-500 text-white rounded" onClick={onRun}>生成攻略</button>
-        {result && <GuideCard text={result.text} images={result.images}/>}
+    <div
+      className={`${theme.background} ${theme.font} min-h-screen transition-colors duration-500 ${
+        darkMode ? 'dark' : ''
+      }`}
+    >
+      <Header
+        darkMode={darkMode}
+        onToggleDarkMode={toggleDarkMode}
+        theme={theme}
+        currentTheme={themeName}
+        onThemeChange={handleThemeChange}
+      />
+
+      <main className="max-w-4xl mx-auto p-6">
+        {guides.map((guide, idx) => (
+          <GuideCard
+            key={idx}
+            title={guide.title}
+            content={guide.content}
+            image={guide.image}
+            theme={theme}
+          />
+        ))}
       </main>
     </div>
-  );
+  )
 }
+
+export default Home
